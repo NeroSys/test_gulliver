@@ -37,6 +37,16 @@ class UserProfile extends \yii\db\ActiveRecord
             [['user_id', 'codePostal', 'houseNumber', 'flatNumber'], 'integer'],
             [['country', 'city', 'street'], 'string', 'max' => 255],
             [['user_id'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['user_id' => 'id']],
+            ['codePostal', 'trim'],
+            ['codePostal', 'required'],
+            ['country', 'trim'],
+            ['country', 'required'],
+            ['city', 'trim'],
+            ['city', 'required'],
+            ['street', 'trim'],
+            ['street', 'required'],
+            ['houseNumber', 'trim'],
+            ['houseNumber', 'required'],
         ];
     }
 
@@ -48,12 +58,12 @@ class UserProfile extends \yii\db\ActiveRecord
         return [
             'id' => Yii::t('app', 'ID'),
             'user_id' => Yii::t('app', 'User ID'),
-            'codePostal' => Yii::t('app', 'Code Postal'),
-            'country' => Yii::t('app', 'Country'),
-            'city' => Yii::t('app', 'City'),
-            'street' => Yii::t('app', 'Street'),
-            'houseNumber' => Yii::t('app', 'House Number'),
-            'flatNumber' => Yii::t('app', 'Flat Number'),
+            'codePostal' => Yii::t('app', 'Индекс'),
+            'country' => Yii::t('app', 'Страна'),
+            'city' => Yii::t('app', 'Город'),
+            'street' => Yii::t('app', 'Улица'),
+            'houseNumber' => Yii::t('app', '№ дома'),
+            'flatNumber' => Yii::t('app', '№ квартиры'),
         ];
     }
 

@@ -1,7 +1,5 @@
 <?php
-
 namespace app\controllers;
-
 use Yii;
 use yii\filters\AccessControl;
 use yii\web\Controller;
@@ -17,7 +15,11 @@ use app\models\ResetPasswordForm;
 use yii\base\InvalidParamException;
 use yii\web\HttpException;
 use yii\widgets\ActiveForm;
-
+use app\models\UserProfile;
+use yii\web\NotFoundHttpException;
+use app\base\Model;
+use yii\helpers\ArrayHelper;
+use yii\db\Exception;
 
 class SiteController extends Controller
 {
@@ -46,7 +48,6 @@ class SiteController extends Controller
             ],
         ];
     }
-
     /**
      * {@inheritdoc}
      */
@@ -62,7 +63,6 @@ class SiteController extends Controller
             ],
         ];
     }
-
     /**
      * Displays homepage.
      *
@@ -72,7 +72,6 @@ class SiteController extends Controller
     {
         return $this->render('index');
     }
-
     /**
      * Login action.
      *
@@ -83,18 +82,15 @@ class SiteController extends Controller
         if (!Yii::$app->user->isGuest) {
             return $this->goHome();
         }
-
         $model = new LoginForm();
         if ($model->load(Yii::$app->request->post()) && $model->login()) {
             return $this->goBack();
         }
-
         $model->password = '';
         return $this->render('login', [
             'model' => $model,
         ]);
     }
-
     /**
      * Logout action.
      *
@@ -103,10 +99,8 @@ class SiteController extends Controller
     public function actionLogout()
     {
         Yii::$app->user->logout();
-
         return $this->goHome();
     }
-
     /**
      * Displays contact page.
      *
@@ -117,14 +111,12 @@ class SiteController extends Controller
         $model = new ContactForm();
         if ($model->load(Yii::$app->request->post()) && $model->contact(Yii::$app->params['adminEmail'])) {
             Yii::$app->session->setFlash('contactFormSubmitted');
-
             return $this->refresh();
         }
         return $this->render('contact', [
             'model' => $model,
         ]);
     }
-
     /**
      * Displays about page.
      *
@@ -134,23 +126,104 @@ class SiteController extends Controller
     {
         return $this->render('about');
     }
-
     public function actionSignup()
     {
         $model = new SignupForm();
 
+        $modelsAddress = [new UserProfile];
+
         if ($model->load(Yii::$app->request->post())) {
+
+            $modelsAddress = Model::createMultiple(UserProfile::classname());
+            Model::loadMultiple($modelsAddress, Yii::$app->request->post());
+
+
+            // ajax validation
+            if (Yii::$app->request->isAjax) {
+                Yii::$app->response->format = Response::FORMAT_JSON;
+                return ArrayHelper::merge(
+                    ActiveForm::validateMultiple($modelsAddress),
+                    ActiveForm::validate($model)
+                );
+            }
+
+            // validate all models
+            $valid = $model->validate();
+
+
             if ($user = $model->signup()) {
-                if (Yii::$app->getUser()->login($user)) {
-                    return $this->goHome();
+
+
+                $valid = Model::validateMultiple($modelsAddress) && $valid;
+
+                if ($valid) {
+                    $transaction = \Yii::$app->db->beginTransaction();
+                    try {
+
+                            foreach ($modelsAddress as $modelAddress) {
+                                $modelAddress->user_id = $user->id;
+                                if (! ($flag = $modelAddress->save(false))) {
+                                    $transaction->rollBack();
+                                    break;
+                                }
+                            }
+
+                        if ($flag) {
+                            $transaction->commit();
+                            if (Yii::$app->getUser()->login($user)) {
+
+                                return $this->goHome();
+                            }
+                        }
+                    } catch (Exception $e) {
+                        $transaction->rollBack();
+                    }
                 }
+
+
             }
         }
-
         return $this->render('signup', [
             'model' => $model,
+            'modelsAddress' => (empty($modelsAddress)) ? [new UserProfile] : $modelsAddress
         ]);
     }
+//
+//if ($valid) {
+//$transaction = \Yii::$app->db->beginTransaction();
+//try {
+//if ($flag = $modelMain->save(false)) {
+//foreach ($modelTrouble as $modelAddress) {
+//$modelAddress->item_id = $modelMain->id;
+//if (! ($flag = $modelAddress->save(false))) {
+//$transaction->rollBack();
+//break;
+//}
+//}
+//
+//foreach ($modelFeedback as $modelF) {
+//    $modelF->item_id = $modelMain->id;
+//    if (! ($flag = $modelF->save(false))) {
+//        $transaction->rollBack();
+//        break;
+//    }
+//}
+//}
+//if ($flag) {
+//    $transaction->commit();
+//    Yii::$app->response->refresh();
+//
+//    return $this->render('line-form', [
+//        'modelMain' => $modelMain,
+//        'modelTrouble' => (empty($modelTrouble)) ? [new LinePersonnelTrouble()] : $modelTrouble,
+//        'modelFeedback' => (empty($modelFeedback)) ? [new LinePersonnelFeedback()] : $modelFeedback
+//    ]);
+//}
+//} catch (Exception $e) {
+//    $transaction->rollBack();
+//}
+//            }
+
 
     /**
      * Requests password reset.
@@ -160,7 +233,6 @@ class SiteController extends Controller
     public function actionRequestPasswordReset()
     {
         $model = new PasswordResetRequestForm();
-
         if ($model->load(Yii::$app->request->post()) && $model->validate()) {
             if ($model->sendEmail()) {
                 Yii::$app->session->setFlash('success', 'Check your email for further instructions.');
@@ -169,12 +241,10 @@ class SiteController extends Controller
                 Yii::$app->session->setFlash('error', 'Sorry, we are unable to reset password for email provided.');
             }
         }
-
         return $this->render('passwordResetRequestForm', [
             'model' => $model,
         ]);
     }
-
     /**
      * Resets password.
      *
@@ -189,16 +259,13 @@ class SiteController extends Controller
         } catch (InvalidParamException $e) {
             throw new BadRequestHttpException($e->getMessage());
         }
-
         if ($model->load(Yii::$app->request->post()) && $model->validate() && $model->resetPassword()) {
             Yii::$app->session->setFlash('success', 'New password was saved.');
             return $this->goHome();
         }
-
         return $this->render('resetPasswordForm', [
             'model' => $model,]);
-      }
-
+    }
     public function actionAjaxLogin() {
         if (Yii::$app->request->isAjax) {
             $model = new LoginForm();
@@ -214,7 +281,6 @@ class SiteController extends Controller
             throw new HttpException(404 ,'Page not found');
         }
     }
-
 //    public function actionAddAdmin() {
 //        $model = User::find()->where(['username' => 'admin'])->one();
 //        if (empty($model)) {
@@ -228,7 +294,6 @@ class SiteController extends Controller
 //            }
 //        }
 //    }
-
 
 
 }

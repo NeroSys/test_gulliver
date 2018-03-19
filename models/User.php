@@ -33,6 +33,7 @@ class User extends ActiveRecord implements IdentityInterface
         ];
     }
 
+
     public static function findIdentity($id)
     {
         return static::findOne(['id' => $id, 'status' => self::STATUS_ACTIVE]);
@@ -111,6 +112,15 @@ class User extends ActiveRecord implements IdentityInterface
     public function removePasswordResetToken()
     {
         $this->password_reset_token = null;
+    }
+
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getUserProfiles()
+    {
+        return $this->hasMany(UserProfile::className(), ['user_id' => 'id']);
     }
 
 }
