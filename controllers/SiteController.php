@@ -9,6 +9,15 @@ use yii\web\Response;
 use yii\filters\VerbFilter;
 use app\models\LoginForm;
 use app\models\ContactForm;
+use app\models\User;
+use app\models\SignupForm;
+use app\models\PasswordResetRequestForm;
+use yii\web\BadRequestHttpException;
+use app\models\ResetPasswordForm;
+use yii\base\InvalidParamException;
+use yii\web\HttpException;
+use yii\widgets\ActiveForm;
+
 
 class SiteController extends Controller
 {
@@ -125,4 +134,101 @@ class SiteController extends Controller
     {
         return $this->render('about');
     }
+
+    public function actionSignup()
+    {
+        $model = new SignupForm();
+
+        if ($model->load(Yii::$app->request->post())) {
+            if ($user = $model->signup()) {
+                if (Yii::$app->getUser()->login($user)) {
+                    return $this->goHome();
+                }
+            }
+        }
+
+        return $this->render('signup', [
+            'model' => $model,
+        ]);
+    }
+
+    /**
+     * Requests password reset.
+     *
+     * @return mixed
+     */
+    public function actionRequestPasswordReset()
+    {
+        $model = new PasswordResetRequestForm();
+
+        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+            if ($model->sendEmail()) {
+                Yii::$app->session->setFlash('success', 'Check your email for further instructions.');
+                return $this->goHome();
+            } else {
+                Yii::$app->session->setFlash('error', 'Sorry, we are unable to reset password for email provided.');
+            }
+        }
+
+        return $this->render('passwordResetRequestForm', [
+            'model' => $model,
+        ]);
+    }
+
+    /**
+     * Resets password.
+     *
+     * @param string $token
+     * @return mixed
+     * @throws BadRequestHttpException
+     */
+    public function actionResetPassword($token)
+    {
+        try {
+            $model = new ResetPasswordForm($token);
+        } catch (InvalidParamException $e) {
+            throw new BadRequestHttpException($e->getMessage());
+        }
+
+        if ($model->load(Yii::$app->request->post()) && $model->validate() && $model->resetPassword()) {
+            Yii::$app->session->setFlash('success', 'New password was saved.');
+            return $this->goHome();
+        }
+
+        return $this->render('resetPasswordForm', [
+            'model' => $model,]);
+      }
+
+    public function actionAjaxLogin() {
+        if (Yii::$app->request->isAjax) {
+            $model = new LoginForm();
+            if ($model->load(Yii::$app->request->post())) {
+                if ($model->login()) {
+                    return $this->goBack();
+                } else {
+                    Yii::$app->response->format = Response::FORMAT_JSON;
+                    return ActiveForm::validate($model);
+                }
+            }
+        } else {
+            throw new HttpException(404 ,'Page not found');
+        }
+    }
+
+//    public function actionAddAdmin() {
+//        $model = User::find()->where(['username' => 'admin'])->one();
+//        if (empty($model)) {
+//            $user = new User();
+//            $user->username = 'admin';
+//            $user->email = 'admin@admin.ua';
+//            $user->setPassword('admin');
+//            $user->generateAuthKey();
+//            if ($user->save()) {
+//                echo 'good';
+//            }
+//        }
+//    }
+
+
+
 }
