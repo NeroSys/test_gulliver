@@ -14,8 +14,8 @@
 
 Пароль администратора
 
-## name: admin
-## pass: admin
+### name: admin
+### pass: admin
 
 
 
