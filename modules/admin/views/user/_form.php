@@ -12,10 +12,22 @@ use yii\widgets\ActiveForm;
 
     <?php $form = ActiveForm::begin(); ?>
 
+    <?= $form->field($model, 'username')->textInput() ?>
+
+    <?= $form->field($model, 'lastName')->textInput() ?>
+
+    <?= $form->field($model, 'male')->dropDownList([ 'prompt'=>'выберите пол',
+        '0' => 'мужской',
+        '1' => 'женский',
+
+    ]) ?>
+
+    <?= $form->field($model, 'email')->textInput() ?>
+
     <?= $form->field($model, 'status')->textInput() ?>
 
     <div class="form-group">
-        <?= Html::submitButton(Yii::t('app', 'Save'), ['class' => 'btn btn-success']) ?>
+        <?= Html::submitButton(Yii::t('app', 'Сохранить'), ['class' => 'btn btn-success']) ?>
     </div>
 
     <?php ActiveForm::end(); ?>

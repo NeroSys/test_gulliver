@@ -9,6 +9,8 @@
 use yii\helpers\Html;
 use yii\bootstrap\ActiveForm;
 use wbraganca\dynamicform\DynamicFormWidget;
+use app\models\Countries;
+use yii\helpers\ArrayHelper;
 
 $this->title = 'Авторизация на сайте';
 $this->params['breadcrumbs'][] = $this->title;
@@ -76,7 +78,8 @@ $this->params['breadcrumbs'][] = $this->title;
                                             <?= $form->field($modelAddress, "[{$i}]codePostal")->textInput(['maxlength' => true]) ?>
                                             <div class="row">
                                                 <div class="col-sm-6">
-                                                    <?= $form->field($modelAddress, "[{$i}]country")->textInput(['maxlength' => true]) ?>
+
+                                                    <?= $form->field($modelAddress, "[{$i}]country")->dropDownList(ArrayHelper::map(Countries::find()->asArray()->all(),'code', 'name'), ['prompt' => 'Выберите страну']) ?>
                                                 </div>
                                                 <div class="col-sm-6">
                                                     <?= $form->field($modelAddress, "[{$i}]city")->textInput(['maxlength' => true]) ?>

@@ -33,6 +33,13 @@ $this->params['breadcrumbs'][] = $this->title;
             'id',
             'username',
             'lastName',
+            [
+                'attribute'=> 'male',
+                'format' => 'html',
+                'value' => function($model){
+                    return $model->male ? '<span class="text-primary">Женский</span>' : '<span class="text-primary">Мужской</span>';
+                }
+            ],
             'male',
             'auth_key',
             'password_hash',

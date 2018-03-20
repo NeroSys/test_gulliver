@@ -1,6 +1,6 @@
 <?php
 use yii\grid\GridView;
-
+use yii\helpers\Html;
 
 $this->title = 'Admin | ';
 ?>
@@ -15,7 +15,13 @@ $this->title = 'Admin | ';
             'id',
             'username',
             'lastName',
-            'male',
+            [
+                'attribute'=> 'male',
+                'format' => 'html',
+                'value' => function($model){
+                    return $model->male ? '<span class="text-primary">Женский</span>' : '<span class="text-primary">Мужской</span>';
+                }
+            ],
 //            'auth_key',
             //'password_hash',
             //'password_reset_token',
@@ -24,7 +30,20 @@ $this->title = 'Admin | ';
             //'created_at',
             //'updated_at',
 
-            ['class' => 'yii\grid\ActionColumn'],
+            [
+                'class' => 'yii\grid\ActionColumn',
+                'template' => '{view} {update} {delete} {link}',
+                'buttons' => [
+                    'delete' => function ($url,$model,$key) {
+                        return Html::a('<span class="glyphicon glyphicon-trash"></span>',
+                            ['user/delete', 'id' => $model->id],
+                            ['data-method' => 'post']
+                        );
+                    },
+                ],
+                'controller' => 'user',
+
+            ],
         ],
     ]); ?>
 </div>
